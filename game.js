@@ -1,8 +1,8 @@
 var T = {
-    W: 32,
-    H: 32,
+    W: 20,
+    H: 20,
     p1: { x: 0, y: 0, c: 0xCD5C5C, h: 5, spd: 1, fx: 1, fy: 0, pn: 1, bnum: 50, bh: 9 },
-    p2: { x: 31, y: 31, c: 0x4169E1, h: 5, spd: 1, fx: -1, fy: 0, pn: 2, bnum: 50, bh: 9 },
+    p2: { x: 19, y: 19, c: 0x4169E1, h: 5, spd: 1, fx: -1, fy: 0, pn: 2, bnum: 50, bh: 9 },
     obs: [],
     bullets: [],
     knives: [],
@@ -190,7 +190,7 @@ var T = {
                 PS.glyph(spd.x, spd.y, String(spd.h));
             }
             if(spd.h <= 0){
-                this.spdtower.splice(i, 1);
+                this.attower.splice(i, 1);
             }
         }
 
@@ -381,6 +381,15 @@ var T = {
                 }
             }
 
+            for (let j = 0; j < this.attower.length; j++) {
+                let spd = this.attower[j];
+                if (spd.x === b.x && spd.y === b.y && spd.pn != b.pn) {
+                    this.attower[j].h -= 1;
+                    this.bullets.splice(i, 1);
+                    break;
+                }
+            }
+
             if (b.x < 0 || b.x >= this.W || b.y < 0 || b.y >= this.H) {
                 this.bullets.splice(i, 1);
                 continue;
@@ -463,6 +472,24 @@ var T = {
                 }
             }
 
+            for (let j = 0; j < this.spdtower.length; j++) {
+                let spd = this.spdtower[j];
+                if (spd.x === k.x && spd.y === k.y && spd.pn != k.pn) {
+                    this.spdtower[j].h -= 1;
+                    this.bullets.splice(i, 1);
+                    break;
+                }
+            }
+
+            for (let j = 0; j < this.attower.length; j++) {
+                let spd = this.attower[j];
+                if (spd.x === k.x && spd.y === k.y && spd.pn != k.pn) {
+                    this.attower[j].h -= 1;
+                    this.bullets.splice(i, 1);
+                    break;
+                }
+            }
+
             if (k.blink > 0) {
                 k.blink -= 1;
             } else {
@@ -487,7 +514,7 @@ var T = {
     },
 
     handleKey: function(key) {
-        PS.debug(key);
+       // PS.debug(key);
         if (this.over) return;
 
         if (key === PS.KEY_ARROW_UP) this.move(this.p1, 0, -1);
