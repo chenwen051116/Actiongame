@@ -1,8 +1,8 @@
 var T = {
     W: 20,
     H: 20,
-    p1: { x: 0, y: 0, c: 0xCD5C5C, h: 5, spd: 1, fx: 1, fy: 0, pn: 1, bnum: 50, bh: 9 },
-    p2: { x: 19, y: 19, c: 0x4169E1, h: 5, spd: 1, fx: -1, fy: 0, pn: 2, bnum: 50, bh: 9 },
+    p1: { x: 0, y: 0, c: 0xff273b, h: 5, spd: 1, fx: 1, fy: 0, pn: 1, bnum: 30, bh: 9 },
+    p2: { x: 19, y: 19, c: 0x1f3dff, h: 5, spd: 1, fx: -1, fy: 0, pn: 2, bnum: 30, bh: 9 },
     obs: [],
     bullets: [],
     knives: [],
@@ -12,22 +12,58 @@ var T = {
     attower: [],
     timer: null,
     powerUpTimer: null,
+    endgame: null,
     over: false,
+    p1xtimer: null,
+    p2xtimer: null,
+    p1btimer: null,
+    p2btimer: null,
+    p1xhit: false,
+    p2xhit: false,
+    p1bhit: false,
+    p2bhit: false,
+    p1bcolor: PS.makeRGB(255,100,100),
+    p2bcolor: PS.makeRGB(100,100,255),
     obsnum:100,
+    w :{
+        top : 0,
+        left : 0,
+        bottom : 0,
+        right : 0
+        },
 
     init: function() {
+        this.p1 = { x: 0, y: 0, c: 0xff273b, h: 5, spd: 1, fx: 1, fy: 0, pn: 1, bnum: 50, bh: 9 };
+        this.p2 = { x: 19, y: 19, c: 0x1f3dff, h: 5, spd: 1, fx: -1, fy: 0, pn: 2, bnum: 50, bh: 9 };
+        this.obs= [];
+        this.bullets= [];
+        this.knives= [];
+        this.powerUps= [];
+        this.base= [];
+        this.spdtower= [];
+        this.attower= [];
+        this.timer= null;
+        this.powerUpTimer= null;
+        this.endgame= null;
+        this.over= false;
+        this.p1xhit= false;
+        this.p2xhit= false;
+        this.p1bhit= false;
+        this.p2bhit= false;
+        this.p1bcolor= PS.makeRGB(255,100,100),
+        this.p2bcolor= PS.makeRGB(100,100,255),
         PS.gridSize(this.W, this.H);
         PS.gridColor(PS.COLOR_WHITE);
         this.addObs();
         this.update();
-        PS.statusText("P1: Arrows P2: WASD Shoot: G/[ Knife: F/' Obs: H/P");
+        PS.statusText("");
         this.startTimers();
     },
 
     startTimers: function() {
-        this.timer = PS.timerStart(3, this.updateBullets.bind(this));
+        this.timer = PS.timerStart(5, this.updateBullets.bind(this));
         this.powerUpTimer = PS.timerStart(200, this.generatePowerUp.bind(this)); 
-        this.spdTimer = PS.timerStart(120, this.updatespd.bind(this));
+        this.spdTimer = PS.timerStart(60, this.updatespd.bind(this));
         this.atTimer = PS.timerStart(60, this.updateat.bind(this));
     },
 
@@ -41,9 +77,16 @@ var T = {
             this.bullets.push({ dfracx: 0, dfracy: 0, isfrac: 0  , fracx: 0.0, fracy: 0.0,   x: spd.x, y: spd.y, dx: -1, dy: -1, pn: spd.pn });
             this.bullets.push({ dfracx: 0, dfracy: 0, isfrac: 0  , fracx: 0.0, fracy: 0.0,   x: spd.x, y: spd.y, dx: 1, dy: -1, pn: spd.pn });
             this.bullets.push({ dfracx: 0, dfracy: 0, isfrac: 0  , fracx: 0.0, fracy: 0.0,   x: spd.x, y: spd.y, dx: -1, dy: 1, pn: spd.pn });
+            PS.audioPlay("fx_bloop");
         }
     },
-
+    addMusic: function(){
+        // Load sound effects
+        PS.audioLoad("fx_drip2");
+        PS.audioLoad("fx_bloop");
+        PS.audioLoad("fx_drip1");
+        PS.audioLoad("fx_coin7");
+    },
     updateat: function(){
         for(let i = 0; i < this.attower.length; i++){
             let at = this.attower[i];
@@ -85,6 +128,7 @@ var T = {
                 }
 
             }
+            PS.audioPlay("fx_drip1");
         }
     },
 
@@ -93,38 +137,42 @@ var T = {
         for (let i = 0; i < this.obsnum; i++) {
             let x = Math.floor(Math.random() * this.W);
             let y = Math.floor(Math.random() * this.H);
-            this.obs.push({ x: x, y: y, h: 20});
+            this.obs.push({ x: x, y: y, h: 40});
         }
     },
 
     addspd: function(p) {
+        //PS.audioPlay("fx_coin7");
         if(p == 1){
             if(this.p1.bnum >= 20 && this.isValid(this.p1.x + this.p1.fx, this.p1.y + this.p1.fy)){ 
                 this.spdtower.push({ x: this.p1.x + this.p1.fx, y: this.p1.y + this.p1.fy, h: 8, pn: p});
                 this.p1.bnum -= 20;
+                PS.audioPlay("fx_coin7");
             }
         }
         else{
             if(this.p2.bnum >= 20 && this.isValid(this.p2.x + this.p2.fx, this.p2.y + this.p2.fy)){
                 this.spdtower.push({ x: this.p2.x + this.p2.fx, y: this.p2.y + this.p2.fy, h: 8, pn: p});
                 this.p2.bnum -= 20;
-
+                PS.audioPlay("fx_coin7");
             }
         }        
     },
 
     addat: function(p) {
+        
         if(p == 1){
             if(this.p1.bnum >= 20 && this.isValid(this.p1.x + this.p1.fx, this.p1.y + this.p1.fy)){ 
                 this.attower.push({ x: this.p1.x + this.p1.fx, y: this.p1.y + this.p1.fy, h: 8, pn: p});
                 this.p1.bnum -= 20;
+                PS.audioPlay("fx_coin7");
             }
         }
         else{
             if(this.p2.bnum >= 20 && this.isValid(this.p2.x + this.p2.fx, this.p2.y + this.p2.fy)){
                 this.attower.push({ x: this.p2.x + this.p2.fx, y: this.p2.y + this.p2.fy, h: 8, pn: p});
                 this.p2.bnum -= 20;
-
+                PS.audioPlay("fx_coin7");
             }
         }        
     },
@@ -156,6 +204,7 @@ var T = {
             for (let y = 0; y < this.H; y++) {
                 PS.color(x, y, PS.COLOR_WHITE);
                 PS.glyph(x, y, "");
+                //PS.border( x, y, this.w);
             }
         }
 
@@ -194,8 +243,8 @@ var T = {
             }
         }
 
-        PS.color(0,0,PS.makeRGB(255,100,100));
-        PS.color(this.W-1, this.H-1,PS.makeRGB(100,100,255));
+        PS.color(0,0,this.p1bcolor);
+        PS.color(this.W-1, this.H-1, this.p2bcolor);
         PS.glyph(0,0,String(this.p1.bh));
         PS.glyph(this.W-1, this.H-1,String(this.p2.bh));
         PS.color(this.p1.x, this.p1.y, this.p1.c);
@@ -203,7 +252,12 @@ var T = {
 
         for (let i = 0; i < this.bullets.length; i++) {
             let b = this.bullets[i];
+            if(b.pn == 1){
             PS.color(b.x, b.y, 0xFF0000);
+            }
+            else{
+            PS.color(b.x, b.y, PS.makeRGB(255,0,250));
+            }
         }
 
         for (let i = 0; i < this.knives.length; i++) {
@@ -213,7 +267,7 @@ var T = {
 
         for (let i = 0; i < this.powerUps.length; i++) {
             let p = this.powerUps[i];
-            PS.color(p.x, p.y, p.type === "health" ? 0x00FF00 : 0x0000FF);
+            PS.color(p.x, p.y, p.type === "health" ? 0x00FF00 : 0x7d80e9);
         }
 
         PS.statusText(`P1 HP: ${this.p1.h} B: ${this.p1.bnum}| P2 HP: ${this.p2.h} B: ${this.p2.bnum}`);
@@ -225,6 +279,70 @@ var T = {
             PS.statusText("Player 1 Wins!");
             this.over = true;
         }
+
+        if(this.over == true){
+            this.endgame=PS.timerStart(200, this.restart.bind(this));
+        }
+    },
+
+    restart: function(){
+        PS.timerStop(this.endgame);
+        PS.timerStop(this.timer);
+        PS.timerStop(this.powerUpTimer);
+        PS.timerStop(this.spdTimer);
+        PS.timerStop(this.atTimer);
+        PS.init();
+    },
+
+    phit: function(p){
+        if(p == 1){
+            this.p1.c = 0xff7480;
+            this.p1xhit = true;
+            this.p1xtimer = PS.timerStart(60, this.p1hitend.bind(this));
+        }
+        if(p == 2){
+            this.p2.c = 0x5269ff;
+            this.p2xhit = true;
+            this.p2xtimer = PS.timerStart(60, this.p2hitend.bind(this));
+        }
+    },
+
+    p1hitend: function (){
+            PS.timerStop(this.p1xtimer);
+            this.p1.c = 0xff273b;
+            this.p1xhit = false;
+    },
+
+    p2hitend: function (){
+        PS.timerStop(this.p2xtimer);
+        this.p2.c = 0x1f3dff;
+        this.p2xhit = false;
+    },
+
+
+    bhit: function(p){
+        if(p == 1){
+            this.p1bcolor = PS.makeRGB(200,100,100);
+            this.p1bhit = true;
+            this.p1btimer = PS.timerStart(120, this.b1hitend.bind(this));
+        }
+        if(p == 2){
+            this.p2bcolor = PS.makeRGB(100,100,200);
+            this.p2bhit = true;
+            this.p2btimer = PS.timerStart(120, this.b2hitend.bind(this));
+        }
+    },
+
+    b1hitend: function (){
+            PS.timerStop(this.p1btimer);
+            this.p1bcolor = PS.makeRGB(255,100,100);
+            this.p1bhit = false;
+    },
+
+    b2hitend: function (){
+        PS.timerStop(this.p2btimer);
+        this.p2bcolor = PS.makeRGB(100,100,255);
+        this.p2bhit = false;
     },
 
     move: function(p, dx, dy) {
@@ -275,6 +393,7 @@ var T = {
         if (p.bnum > 0) {
             this.bullets.push({ dfracx: 0, dfracy: 0, isfrac: 0  , fracx: 0.0, fracy: 0.0,   x: p.x, y: p.y, dx: p.fx, dy: p.fy, pn: p.pn });
             p.bnum -= 1;
+            PS.audioPlay("fx_drip1");
         }
     },
 
@@ -357,6 +476,7 @@ var T = {
                     }
                     this.powerUps.splice(j, 1);
                     this.bullets.splice(i, 1);
+                    PS.audioPlay("fx_drip2");
                     break;
                 }
             }
@@ -364,7 +484,7 @@ var T = {
             for (let j = 0; j < this.obs.length; j++) {
                 if (this.obs[j].x === b.x && this.obs[j].y === b.y) {
                     this.obs[j].h += 5;
-                    if(this.obs[j].h>= 79){
+                    if(this.obs[j].h>= 99){
                         this.obs.splice(j, 1);
                     }
                     this.bullets.splice(i, 1);
@@ -395,35 +515,39 @@ var T = {
                 continue;
             }
 
-            if (b.x === this.p1.x && b.y === this.p1.y && b.pn != this.p1.pn) {
+            if (b.x === this.p1.x && b.y === this.p1.y && b.pn != this.p1.pn && this.p1xhit == false) {
                 this.p1.h -= 1;
                 this.bullets.splice(i, 1);
+                this.phit(1);
                 continue;
             }
 
-            if (b.x === this.p2.x && b.y === this.p2.y && b.pn != this.p2.pn) {
+            if (b.x === this.p2.x && b.y === this.p2.y && b.pn != this.p2.pn && this.p2xhit == false) {
                 this.p2.h -= 1;
                 this.bullets.splice(i, 1);
+                this.phit(2);
                 continue;
             }
 
             
-            if (b.x === 0 && b.y === 0 && b.pn == 2 ) {
+            if (b.x === 0 && b.y === 0 && b.pn == 2 && this.p1bhit == false) {
                 this.p1.bh -= 1;
                 if(this.p1.bh <= 0){
                     this.p1.h = 0;
                 }
                 this.bullets.splice(i, 1);
+                this.bhit(1);
                 continue;
             }
 
                         
-            if (b.x === this.W-1 && b.y === this.H-1 && b.pn == 1 ) {
+            if (b.x === this.W-1 && b.y === this.H-1 && b.pn == 1 && this.p2bhit == false ) {
                 this.p2.bh -= 1;
                 if(this.p2.bh <= 0){
                     this.p2.h = 0;
                 }
                 this.bullets.splice(i, 1);
+                this.bhit(2);
                 continue;
             }
 
@@ -457,15 +581,16 @@ var T = {
                     
                     this.powerUps.splice(j, 1);
                     this.knives.splice(i, 1);
+                    PS.audioPlay("fx_drip2");
                     break;
                 }
             }
 
             for (let j = 0; j < this.obs.length; j++) {
                 if (this.obs[j].x === k.x && this.obs[j].y === k.y) {
-                    this.obs[j].h += 10;
+                    this.obs[j].h += 5;
                     this.knives.splice(i, 1);
-                    if(this.obs[j].h >= 79){
+                    if(this.obs[j].h >= 100){
                         this.obs.splice(j, 1);
                     }
                     break;
@@ -484,8 +609,7 @@ var T = {
             for (let j = 0; j < this.attower.length; j++) {
                 let spd = this.attower[j];
                 if (spd.x === k.x && spd.y === k.y && spd.pn != k.pn) {
-                    this.attower[j].h -= 1;
-                    this.bullets.splice(i, 1);
+                    this.attower[j].h -= 1;1
                     break;
                 }
             }
@@ -497,15 +621,17 @@ var T = {
                 continue;
             }
 
-            if (k.x === this.p1.x && k.y === this.p1.y && k.pn !== this.p1.pn) {
+            if (k.x === this.p1.x && k.y === this.p1.y && k.pn !== this.p1.pn && this.p1xhit == false) {
                 this.p1.h -= 1;
                 this.knives.splice(i, 1);
+                this.phit(1);
                 continue;
             }
 
-            if (k.x === this.p2.x && k.y === this.p2.y && k.pn !== this.p2.pn) {
+            if (k.x === this.p2.x && k.y === this.p2.y && k.pn !== this.p2.pn && this.p2xhit == false) {
                 this.p2.h -= 1;
                 this.knives.splice(i, 1);
+                this.phit(2);
                 continue;
             }
 
@@ -517,25 +643,25 @@ var T = {
        // PS.debug(key);
         if (this.over) return;
 
-        if (key === PS.KEY_ARROW_UP) this.move(this.p1, 0, -1);
-        if (key === PS.KEY_ARROW_DOWN) this.move(this.p1, 0, 1);
-        if (key === PS.KEY_ARROW_LEFT) this.move(this.p1, -1, 0);
-        if (key === PS.KEY_ARROW_RIGHT) this.move(this.p1, 1, 0);
-        if (key === 91) this.shoot(this.p1);
-        if (key === 93) this.knifeAttack(this.p1);
-        if (key === 112) this.PaddObs(1);
-        if (key === 187) this.addspd(1);
-        if (key === 189) this.addat(1);
+        if (key === PS.KEY_ARROW_UP) this.move(this.p2, 0, -1);
+        if (key === PS.KEY_ARROW_DOWN) this.move(this.p2, 0, 1);
+        if (key === PS.KEY_ARROW_LEFT) this.move(this.p2, -1, 0);
+        if (key === PS.KEY_ARROW_RIGHT) this.move(this.p2, 1, 0);
+        if (key === 91) this.shoot(this.p2);
+        if (key === 93) this.knifeAttack(this.p2);
+        if (key === 112) this.PaddObs(2);
+        if (key === 187) this.addspd(2);
+        if (key === 189) this.addat(2);
 
-        if (key === 119) this.move(this.p2, 0, -1);  
-        if (key === 115) this.move(this.p2, 0, 1);   
-        if (key === 97) this.move(this.p2, -1, 0);   
-        if (key === 100) this.move(this.p2, 1, 0);   
-        if (key === 103) this.shoot(this.p2);
-        if (key === 102) this.knifeAttack(this.p2);
-        if (key === 104) this.PaddObs(2);
-        if (key === 114) this.addspd(2);
-        if (key === 116) this.addat(2);
+        if (key === 119) this.move(this.p1, 0, -1);  
+        if (key === 115) this.move(this.p1, 0, 1);   
+        if (key === 97) this.move(this.p1, -1, 0);   
+        if (key === 100) this.move(this.p1, 1, 0);   
+        if (key === 103) this.shoot(this.p1);
+        if (key === 102) this.knifeAttack(this.p1);
+        if (key === 104) this.PaddObs(1);
+        if (key === 114) this.addspd(1);
+        if (key === 116) this.addat(1);
     }
 };
 
